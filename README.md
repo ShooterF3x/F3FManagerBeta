@@ -48,26 +48,5 @@ Ce projet est réalisé en **Vanilla HTML/CSS/JS**. Aucune compilation, aucun fr
 
 ---
 
-## 📝 Utilisation du Calculateur
-
-1.  **Créez votre modèle** dans l'onglet "Config" (Poids à vide, CG vide, position des soutes).
-2.  Sur la pente, **entrez le vent** mesuré.
-3.  Cliquez sur **"Optimiser"** : L'algo calcule la meilleure combinaison de gueuses.
-4.  Si besoin, **ajustez manuellement** le plomb de nez pour parfaire le CG.
-5.  Volez, puis **enregistrez votre vol** dans le journal !
-
----
-
-## 🤝 Contribuer
-
-Si vous souhaitez améliorer le code ou ajouter des fonctionnalités :
-1.  Forkez ce dépôt.
-2.  Créez votre branche (`git checkout -b feature/AmazingFeature`).
-3.  Commitez vos changements (`git commit -m 'Add some AmazingFeature'`).
-4.  Push sur la branche (`git push origin feature/AmazingFeature`).
-5.  Ouvrez une Pull Request.
-
----
-
 **Auteur :** Passionné de F3F & Tech.
 **Licence :** MIT
