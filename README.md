@@ -1,10 +1,11 @@
 # ✈️ F3F Manager (v5.7)
 
 **L'outil de poche ultime pour les pilotes de planeur de compétition F3F et VDP.**
+Application générée par IA
 
 F3F Manager est une **Progressive Web App (PWA)** conçue pour calculer instantanément la répartition idéale du ballast (Laiton, Plomb, Tungstène) en fonction des conditions de vent, tout en garantissant un Centre de Gravité (CG) parfait.
 
-🔗 **[DEMO : Accéder à l'application ici](https://f3f-manager.netlify.app/)**
+🔗 **[Accéder à l'application ici](https://f3f-manager.netlify.app/)**
 
 ---
 
