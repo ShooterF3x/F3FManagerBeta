@@ -852,7 +852,7 @@ window.renderLogs = function() {
                     <input type="checkbox" class="log-chk" value="${l.id}" ${isCheckedDefault ? 'checked' : ''} style="width:20px; height:20px; margin:0;">
                     <div class="log-date-slope">${dt.toLocaleDateString()} | ${l.s || 'PENTE'}</div>
                 </div>
-                <div style="font-size:0.6rem; background:var(--primary); padding:2px 6px; border-radius:4px; font-weight:bold;">${l.cond || 'NORMAL'}</div>
+                <div style="font-size:0.6rem; background:var(--primary); color:#ffffff; padding:2px 6px; border-radius:4px; font-weight:bold; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${l.cond || 'NORMAL'}</div>
             </div>
             <div class="log-model">${l.m} <span style="font-size:0.7rem; color:var(--text-muted);"> (F:${l.f || 100}%)</span></div>
             <div class="log-stats"><span class="log-stat-item">⚖️ ${l.w}</span><span class="log-stat-item">🎯 ${l.cg}</span>${l.t ? `<span class="log-stat-item">⏱️ ${l.t}s</span>` : ''}</div>${l.n ? `<div class="log-note">${l.n}</div>` : ''}
@@ -860,7 +860,6 @@ window.renderLogs = function() {
         c.appendChild(d);
     });
 };
-
 window.toggleAllLogs = function(isChecked) {
     document.querySelectorAll('.log-chk').forEach(chk => chk.checked = isChecked);
 };
@@ -947,7 +946,7 @@ Historique des vols sélectionnés :
 ${recentLogs}`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${geminiApiKey}`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
