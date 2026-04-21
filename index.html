@@ -20,6 +20,14 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/app.js?v=v6.1" defer></script>
+
+    <link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#0d6efd">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="F3F">
+
 </head>
 <body data-theme="cyber">
 
@@ -210,8 +218,8 @@
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 15px;">
-            <button class="btn btn-magic" onclick="autoFillBallast()" style="flex: 2; margin-top:0;">🪄 OPTIMISER BALLASTS</button>
-            <button class="btn btn-outline" onclick="window.suggestFromHistory()" style="flex: 1; padding:0; display:flex; align-items:center; justify-content:center; color:var(--primary); border-color:var(--primary);" title="Coach Chrono">💡 COACH</button>
+           <button class="btn" style="background-color: #0d6efd; color: white; border: none; font-weight: bold;" onclick="window.autoFillBallast()" data-i18n="optimize">🪄 OPTIMISER</button>
+            <button class="btn btn-outline" onclick="window.suggestFromHistory()" style="flex: 1; padding:0; display:flex; align-items:center; justify-content:center; color:var(--primary); border-color:var(--primary);" title="Coach Chrono">💡 </button>
         </div>
     </div>
     
@@ -350,6 +358,16 @@
             }).catch(err => console.log('Erreur SW :', err));
         });
     }
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker enregistré !'))
+        .catch(err => console.log('Erreur Service Worker :', err));
+    });
+  }
 </script>
 
 </body>
