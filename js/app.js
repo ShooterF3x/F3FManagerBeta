@@ -330,21 +330,40 @@ function renderCalc() {
     if(!document.getElementById('vis-css')) {
         const style = document.createElement('style');
         style.id = 'vis-css';
+       // --- NOUVEAU MODULE : LE CROQUIS INTERACTIF DE L'AILE ---
+    if(!document.getElementById('vis-css')) {
+        const style = document.createElement('style');
+        style.id = 'vis-css';
         style.innerHTML = `
-            .vis-container { margin: 15px 0; padding: 15px 10px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;}
+            /* --- DIAGRAMME COMPACT --- */
+            .vis-container { margin: 5px 0 10px 0; padding: 10px 5px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;}
             [data-theme="cyber"] .vis-container { background: rgba(255,255,255,0.02); }
             .vis-fuselage { display:flex; flex-direction:column; align-items:center; position:relative; width: 100%; }
-            .vis-nose { width: 30px; height: 40px; background: var(--border); border-radius: 15px 15px 4px 4px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:bold; color:var(--bg-body); margin-bottom:10px; transition:all 0.3s;}
-            .vis-chamber-row { display:flex; align-items:center; justify-content:center; gap: 6px; margin-bottom: 8px; width:100%; }
-            .vis-wing { display:flex; gap:2px; background: var(--bg-body); padding:4px; border-radius:4px; border: 1px solid var(--border); flex:1; justify-content:flex-end; min-width: 0;}
+            .vis-nose { width: 24px; height: 24px; background: var(--border); border-radius: 12px 12px 3px 3px; display:flex; align-items:center; justify-content:center; font-size:0.55rem; font-weight:bold; color:var(--bg-body); margin-bottom:5px; transition:all 0.3s;}
+            
+            /* Masquer le nez s'il est vide pour gagner de la place verticale */
+            .vis-nose:empty { display: none !important; }
+            
+            .vis-chamber-row { display:flex; align-items:center; justify-content:center; gap: 4px; margin-bottom: 4px; width:100%; }
+            .vis-wing { display:flex; gap:1px; background: var(--bg-body); padding:2px; border-radius:3px; border: 1px solid var(--border); flex:1; justify-content:flex-end; min-width: 0;}
             .vis-wing.right { justify-content:flex-start; }
-            .vis-slot { flex: 1; max-width: 24px; height: 22px; border-radius: 2px; background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.3); transition:all 0.2s;}
-            .vis-slot.b { background: #d97706; border-color: #b45309; } /* Laiton */
-            .vis-slot.l { background: #64748b; border-color: #334155; } /* Plomb */
-            .vis-slot.t { background: #1e293b; border-color: #0f172a; } /* Tungstène */
-            .vis-fuse-center { width:16px; height:28px; background: var(--border); border-radius:2px; flex-shrink: 0;}
-            .vis-title { text-align:center; font-family:var(--font-head); font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;}
+            .vis-slot { flex: 1; max-width: 22px; height: 14px; border-radius: 1px; background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.3); transition:all 0.2s;}
+            .vis-slot.b { background: #d97706; border-color: #b45309; } 
+            .vis-slot.l { background: #64748b; border-color: #334155; } 
+            .vis-slot.t { background: #1e293b; border-color: #0f172a; } 
+            .vis-fuse-center { width:14px; height:18px; background: var(--border); border-radius:2px; flex-shrink: 0;}
+            .vis-title { text-align:center; font-family:var(--font-head); font-size:0.7rem; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;}
+            
+            /* --- COMPRESSION GLOBALE DE L'ÉCRAN (Spécial Smartphone) --- */
+            #view-calc { padding-top: 5px !important; }
+            #view-calc h2, #calc-title { font-size: 1.1rem; margin-bottom: 5px; margin-top: 0; }
+            #view-calc .control-group, #view-calc .card { margin-bottom: 6px !important; padding: 8px !important; }
+            #view-calc input[type="range"] { height: 1.2rem; margin: 2px 0; }
+            #view-calc .btn { padding: 6px 12px; font-size: 0.9rem; }
+            #view-calc .results-bar, #view-calc .stats-box { margin-bottom: 5px; padding: 6px; }
         `;
+        document.head.appendChild(style);
+    }
         document.head.appendChild(style);
     }
 
@@ -538,7 +557,11 @@ function recalc(g) {
     dEl.style.color = isCgGood ? 'var(--success)' : 'var(--danger)';
     document.getElementById('res-cg').style.color = isCgGood ? 'var(--success)' : 'var(--danger)';
     
-    document.getElementById('bar-weight').style.width = Math.min((m/5000)*100, 100)+'%';
+    //document.getElementById('bar-weight').style.width = Math.min((m/5000)*100, 100)+'%';
+    const barEl = document.getElementById('bar-weight');
+if (barEl && barEl.parentNode) {
+    barEl.parentNode.style.display = 'none';
+}
     const loadEl = document.getElementById('res-loading');
     if(g.area > 0) {
         let load = m/g.area;
