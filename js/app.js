@@ -506,14 +506,54 @@ function renderCalc() {
 }
 
 // MODE MANUEL LIBRE
+// MODE MANUEL LIBRE
 window.updMix = function(e, idx, type, delta) {
     if(e) e.stopPropagation(); 
     const g = gliders.find(x=>x.id==currentGliderId); 
     const L = g.loadout[idx]; 
+    const c = g.chambers[idx];
     
     let newVal = L[type] + delta;
+    
+    // On ne peut pas avoir un nombre négatif de plombs
     if(newVal < 0) return; 
     
+    // Si on essaye d'ajouter un élément (delta positif)
+    if (delta > 0) {
+        // 1. Vérification de la capacité MAX de la soute
+        const currentTotal = L.b + L.l + L.t;
+        if (currentTotal + delta > c.max) {
+            window.customAlert("Soute pleine ! Capacité max (" + c.max + ") atteinte.");
+            return;
+        }
+        
+        // 2. Vérification des STOCKS disponibles
+        const matMap = { 'b': 'brass', 'l': 'lead', 't': 'tungsten' };
+        const matFull = matMap[type];
+        const eff = getEffectiveStock(g, idx, matFull);
+        
+        // Si un stock a été défini pour ce matériau (> 0)
+        if (eff.val > 0) {
+            let currentUsage = 0;
+            // Si c'est un stock partagé (Group ID)
+            if (eff.isGroup) {
+                g.chambers.forEach((ch, i) => { 
+                    if(ch.group == c.group) currentUsage += g.loadout[i][type]; 
+                });
+            } else {
+                // Si c'est un stock propre à la soute
+                currentUsage = L[type];
+            }
+            
+            // Si l'ajout dépasse le stock existant
+            if (currentUsage + delta > eff.val) {
+                window.customAlert("Stock épuisé pour ce matériau !");
+                return;
+            }
+        }
+    }
+    
+    // Si tous les tests passent, on valide l'ajout ou le retrait
     L[type] = newVal; 
     save(); 
     renderCalc();
