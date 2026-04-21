@@ -43,18 +43,68 @@ const dict = {
         msg_import_success: "Importation réussie !", msg_import_err: "Erreur lors de l'import.",
         msg_replace_all: "Attention : Ceci va REMPLACER tous vos modèles et logs actuels. Continuer ?",
         msg_add_model: "Modèle détecté : ", msg_add_model_q: "Voulez-vous l'ajouter à votre liste ?",
-        help_html: `<h3>F3F Manager V6.1</h3><p>Optimisation intelligente, CG Dynamique et Ingénieur de piste embarqué.</p>`
+        help_html: `<h3>F3F Manager V6.3</h3><p>Optimisation intelligente, Croquis Dynamique et Ingénieur embarqué.</p>`
+    },
+    en: {
+        new_model: "+ NEW MODEL", logbook_btn: "📓 LOGBOOK", back: "BACK", config: "CONFIG",
+        settings_title: "SETTINGS", language: "LANGUAGE", theme: "THEME", global_calc: "Global Calc",
+        aero_title: "AEROLOGY (CG OFFSETS)", lbl_offset_lam: "Laminar (mm)", lbl_offset_turb: "Turbulent (mm)",
+        opt_title: "OPTIMIZATION", opt_desc: "Algorithm tolerance limits.",
+        lbl_tol_w_min: "Tol. Weight Minus (-g)", lbl_tol_w_max: "Tol. Weight Plus (+g)",
+        lbl_tol_cg_plus: "Tol. CG + (mm)", lbl_tol_cg_min: "Tol. CG - (mm)",
+        gl_desc: "Define the standard glider ballast curve.",
+        pt1: "POINT 1 (Light/Empty)", pt2: "POINT 2 (Heavy/Max)", lbl_weight_kg: "Weight (kg)",
+        ref_surf: "Reference Area (dm²)", res_int: "Internal result:",
+        stat_target: "TARGET", stat_current: "CURRENT", stat_cg: "CG (mm)", wind: "Wind (m/s)", factor: "Factor %", optimize: "🪄 OPTIMIZE",
+        clear_all: "Clear All", ph_slope: "Slope", ph_time: "Time", save_flight: "💾 SAVE FLIGHT",
+        mass_g: "MASS (g)", adj_cg: "Adjust CG",
+        
+        edit_title: "EDIT MODEL", 
+        lbl_name: "Model Name", 
+        lbl_empty_w: "Empty Weight (g)", 
+        lbl_empty_cg: "Empty CG (mm)", 
+        lbl_area: "Wing Area (dm²)", 
+        lbl_target_cg: "Target CG (mm)",
+        desc_nose: "Distance measured from Nose Ballast to Leading Edge.",
+        chambers_title: "BALLAST CONFIGURATION", 
+        add_chamber: "+ Add Chamber", 
+        lbl_color: "Col.",
+        lbl_ch_name: "Chamber Name",
+        lbl_grp: "Link", 
+        lbl_dist: "Dist. Leading Edge", 
+        lbl_max: "Max Capacity (Qty)", 
+        lbl_unit_mass: "Unit Weight (g)", 
+        lbl_stock: "Available Stock (Qty)", 
+        ph_stock: "Stock",
+
+        save: "SAVE", cancel: "CANCEL", delete_model: "DELETE",
+        duplicate_model: "DUPLICATE", copy_suffix: " (Copy)", export_model: "EXPORT MODEL",
+        logbook_title: "LOGBOOK", help_title: "HELP", mat_brass: "BRASS", mat_lead: "LEAD", mat_tung: "TUNG.",
+        alert_saved: "Flight saved!", alert_copied: "Copied!", msg_del_log: "Delete this flight?", msg_del_mod: "Delete this model?", msg_reset: "Clear all ballast?",
+        msg_note: "Flight note:", yes: "YES", no: "NO", charge: "Load", cible_short: "Target",
+        all_models: "ALL MODELS", all_slopes: "ALL SLOPES", nose_title: "NOSE BALLAST (MANUAL)",
+        data_title: "DATA & BACKUP", data_desc: "Backup all your models and flights.",
+        export_all: "EXPORT ALL (.json)", import_btn: "IMPORT",
+        msg_import_success: "Import successful!", msg_import_err: "Error during import.",
+        msg_replace_all: "Warning: This will REPLACE all your current models and logs. Continue?",
+        msg_add_model: "Model detected: ", msg_add_model_q: "Add it to your list?",
+        help_html: `<h3>F3F Manager V6.3</h3><p>Smart optimization, Dynamic Sketch and Embedded Track Engineer.</p>`
     }
 };
 
-/* --- VARIABLES D'ÉTAT --- */
+/* --- VARIABLES D'ÉTAT & GESTION LANGUE --- */
 let gliders = [], flightLogs = [], globalCoefs = { a: 0.16, b: 1.82, refArea: 62, v1:3, m1:2.3, v2:20, m2:5.0, isDouble: false, vp: 10, mp: 3.5, a2: 0, b2: 0 };
 let currentGliderId = null, tempGlider = null;
 let optParams = { wMin: 75, wMax: 20, cgTolPlus: 0.5, cgTolMinus: 0.5, cgOffsetLam: 0.5, cgOffsetTurb: -1.0 };
-let currentLang = localStorage.getItem('f3f_lang') || 'fr';
+let settingsChartInstance = null;
+
+const phoneLang = (navigator.language || navigator.userLanguage).substring(0, 2);
+const defaultLang = dict[phoneLang] ? phoneLang : 'en';
+let currentLang = localStorage.getItem('f3f_lang') || defaultLang;
+
 let currentTheme = localStorage.getItem('f3f_theme_style') || 'cyber';
 let geminiApiKey = localStorage.getItem('f3f_gemini_key') || '';
-let settingsChartInstance = null;
+
 
 /* --- FONCTIONS UTILITAIRES --- */
 function t(key) { return (dict[currentLang] && dict[currentLang][key]) ? dict[currentLang][key] : key; }
@@ -132,7 +182,6 @@ function getCalculatedTargetWeight(w, f, g) {
     return baseTarget * ratio * (f/100);
 }
 
-// LOGIQUE STOCK RIGOUREUSE (Utilisée par l'algo)
 function getEffectiveStock(g, idx, typeFull) {
     const c = g.chambers[idx];
     const stockKey = 'stock_' + typeFull;
@@ -238,7 +287,7 @@ window.drawSettingsChart = function() {
     });
 };
 
-/* --- RENDER FUNCTIONS --- */
+/* --- RENDER FUNCTIONS (INCLUANT LE NOUVEAU CROQUIS) --- */
 function renderList() {
     const l = document.getElementById('glider-list'); l.innerHTML = '';
     gliders.forEach(g => {
@@ -275,37 +324,117 @@ function renderCalc() {
         document.getElementById('cond-norm').checked = true;
     }
 
-    const noseContainer = document.getElementById('nose-ballast-container');
-    const noseColor = g.noseColor || '#d63384';
-    const noseMass = g.noseMass || 0;
+    if(!g.loadout) g.loadout = Array.from({length: g.chambers.length}, () => ({b:0, l:0, t:0}));
+
+    // --- NOUVEAU MODULE : LE CROQUIS INTERACTIF DE L'AILE ---
+    if(!document.getElementById('vis-css')) {
+        const style = document.createElement('style');
+        style.id = 'vis-css';
+        style.innerHTML = `
+            .vis-container { margin: 15px 0; padding: 15px 10px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;}
+            [data-theme="cyber"] .vis-container { background: rgba(255,255,255,0.02); }
+            .vis-fuselage { display:flex; flex-direction:column; align-items:center; position:relative; width: 100%; }
+            .vis-nose { width: 30px; height: 40px; background: var(--border); border-radius: 15px 15px 4px 4px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:bold; color:var(--bg-body); margin-bottom:10px; transition:all 0.3s;}
+            .vis-chamber-row { display:flex; align-items:center; justify-content:center; gap: 6px; margin-bottom: 8px; width:100%; }
+            .vis-wing { display:flex; gap:2px; background: var(--bg-body); padding:4px; border-radius:4px; border: 1px solid var(--border); flex:1; justify-content:flex-end; min-width: 0;}
+            .vis-wing.right { justify-content:flex-start; }
+            .vis-slot { flex: 1; max-width: 24px; height: 22px; border-radius: 2px; background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.3); transition:all 0.2s;}
+            .vis-slot.b { background: #d97706; border-color: #b45309; } /* Laiton */
+            .vis-slot.l { background: #64748b; border-color: #334155; } /* Plomb */
+            .vis-slot.t { background: #1e293b; border-color: #0f172a; } /* Tungstène */
+            .vis-fuse-center { width:16px; height:28px; background: var(--border); border-radius:2px; flex-shrink: 0;}
+            .vis-title { text-align:center; font-family:var(--font-head); font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;}
+        `;
+        document.head.appendChild(style);
+    }
+
+    let visWrapper = document.getElementById('visual-glider-wrapper');
+    if(!visWrapper) {
+        visWrapper = document.createElement('div');
+        visWrapper.id = 'visual-glider-wrapper';
+        const noseUI = document.getElementById('nose-ballast-container');
+        noseUI.parentNode.insertBefore(visWrapper, noseUI);
+    }
+
+    let visHTML = `<div class="vis-container"><div class="vis-title">🔍 DIAGRAMME DE CHARGEMENT</div><div class="vis-fuselage">`;
     
+    // Rendu du Nez
+    let noseColor = g.noseMass > 0 ? (g.noseColor||'var(--primary)') : 'var(--border)';
+    let noseText = g.noseMass > 0 ? `${g.noseMass}g` : '';
+    visHTML += `<div class="vis-nose" style="background:${noseColor}">${noseText}</div>`;
+
+    // Rendu des Soutes et Slots (remplissage centre vers extérieurs)
+    g.chambers.forEach((c, i) => {
+        const L = g.loadout[i];
+        
+        let items = [];
+        for(let k=0; k<L.b; k++) items.push('b');
+        for(let k=0; k<L.l; k++) items.push('l');
+        for(let k=0; k<L.t; k++) items.push('t');
+        
+        let leftSlots = Math.ceil(c.max / 2);
+        let rightSlots = Math.floor(c.max / 2);
+        
+        let leftItems = [];
+        let rightItems = [];
+        
+        items.forEach((item, idx) => {
+            if(idx % 2 === 0 && leftItems.length < leftSlots) leftItems.push(item);
+            else if (rightItems.length < rightSlots) rightItems.push(item);
+            else if (leftItems.length < leftSlots) leftItems.push(item);
+        });
+
+        while(leftItems.length < leftSlots) leftItems.push('');
+        while(rightItems.length < rightSlots) rightItems.push('');
+
+        // On inverse l'aile gauche pour que le ballast s'appuie contre le fuselage au centre
+        leftItems.reverse();
+
+        let lHTML = leftItems.map(item => `<div class="vis-slot ${item}"></div>`).join('');
+        let rHTML = rightItems.map(item => `<div class="vis-slot ${item}"></div>`).join('');
+        let baseColor = c.color || '#888888';
+
+        visHTML += `
+            <div style="width:100%; display:flex; flex-direction:column; align-items:center; margin-bottom:5px;">
+                <span style="font-size:0.6rem; color:${baseColor}; font-weight:bold;">${c.name}</span>
+                <div class="vis-chamber-row">
+                    <div class="vis-wing left" style="border-color:${baseColor}">${lHTML}</div>
+                    <div class="vis-fuse-center" style="background:${baseColor}40"></div>
+                    <div class="vis-wing right" style="border-color:${baseColor}">${rHTML}</div>
+                </div>
+            </div>
+        `;
+    });
+    visHTML += `</div></div>`;
+    visWrapper.innerHTML = visHTML;
+    // --- FIN DU MODULE CROQUIS ---
+
+    const noseContainer = document.getElementById('nose-ballast-container');
     const existingNose = document.getElementById('nose-ballast-ui');
-    const isNoseCollapsed = existingNose ? existingNose.classList.contains('collapsed') : (noseMass <= 0);
+    const isNoseCollapsed = existingNose ? existingNose.classList.contains('collapsed') : (g.noseMass <= 0);
 
     noseContainer.innerHTML = `
         <div class="ballast-line ${isNoseCollapsed ? 'collapsed' : ''} nose-card" id="nose-ballast-ui" onclick="if(event.target.tagName!=='BUTTON' && event.target.tagName!=='INPUT') this.classList.toggle('collapsed')">
             <div class="ballast-title-row">
-                <div style="display:flex; align-items:center;"><span style="font-weight:bold; font-family:var(--font-head); color:${noseColor};">${t('nose_title')}</span></div>
-                <div style="display:flex; align-items:center;"><span style="font-family:var(--font-num); font-size:0.9rem;">${noseMass}g</span><span class="toggle-icon">▶</span></div>
+                <div style="display:flex; align-items:center;"><span style="font-weight:bold; font-family:var(--font-head); color:${g.noseColor || '#d63384'};">${t('nose_title')}</span></div>
+                <div style="display:flex; align-items:center;"><span style="font-family:var(--font-num); font-size:0.9rem;">${g.noseMass || 0}g</span><span class="toggle-icon">▶</span></div>
             </div>
             <div class="mix-controls" style="border-top:none;">
                 <div class="mix-col nose" style="width:100%">
-                    <div class="mix-info"><span class="mix-label" style="color:${noseColor}">${t('mass_g')}</span></div>
+                    <div class="mix-info"><span class="mix-label" style="color:${g.noseColor || '#d63384'}">${t('mass_g')}</span></div>
                     <div class="ctrl-row">
                         <button class="mix-btn" onclick="window.updNose(event, -5)">-</button>
-                        <input type="number" class="nose-val mix-val" value="${noseMass}" onchange="window.updNose(event, 0, this.value)" style="border:none; background:transparent; color:${noseColor}">
+                        <input type="number" class="nose-val mix-val" value="${g.noseMass || 0}" onchange="window.updNose(event, 0, this.value)" style="border:none; background:transparent; color:${g.noseColor || '#d63384'}">
                         <button class="mix-btn" onclick="window.updNose(event, 5)">+</button>
                     </div>
                 </div>
             </div>
         </div>`;
     const noseEl = document.getElementById('nose-ballast-ui');
-    noseEl.style.borderColor = noseColor; noseEl.style.background = hexToRgba(noseColor, 0.1);
+    noseEl.style.borderColor = g.noseColor || '#d63384'; noseEl.style.background = hexToRgba(g.noseColor || '#d63384', 0.1);
 
     const l = document.getElementById('calc-list'); l.innerHTML = '';
     
-    if(!g.loadout) g.loadout = Array.from({length: g.chambers.length}, () => ({b:0, l:0, t:0}));
-
     g.chambers.forEach((c,i) => {
         const L = g.loadout[i];
         const d = document.createElement('div');
@@ -327,7 +456,6 @@ function renderCalc() {
         d.className = `ballast-line ${isChamberCollapsed ? 'collapsed' : ''}`;
         d.onclick = (e) => { if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; d.classList.toggle('collapsed'); };
         
-        // Affichage du stock restant (peut devenir négatif si forcé en manuel)
         const txtStkB = effB.isGroup ? `Link` : (effB.val - L.b);
         const txtStkL = effL.isGroup ? `Link` : (effL.val - L.l);
         const txtStkT = effT.isGroup ? `Link` : (effT.val - L.t);
@@ -351,16 +479,15 @@ function renderCalc() {
     recalc(g);
 }
 
-// MODE MANUEL LIBRE : Plus aucune contrainte de blocage
+// MODE MANUEL LIBRE
 window.updMix = function(e, idx, type, delta) {
     if(e) e.stopPropagation(); 
     const g = gliders.find(x=>x.id==currentGliderId); 
     const L = g.loadout[idx]; 
     
     let newVal = L[type] + delta;
-    if(newVal < 0) return; // On ne peut pas mettre des plombs négatifs
+    if(newVal < 0) return; 
     
-    // Les limites (c.max et stocks) sont ignorées ici pour te laisser la main totale
     L[type] = newVal; 
     save(); 
     renderCalc();
@@ -546,12 +673,24 @@ window.autoFillBallast = function() {
     for (let attempt = 0; attempt < 15; attempt++) {
         let currentLoadout = g.chambers.map(() => ({b:0, l:0, t:0}));
 
+        // La phase de test au hasard respecte strictement les stocks (Cases vides = 0)
         if (attempt > 0) {
             g.chambers.forEach((c, i) => {
                 let numToAdd = Math.floor(Math.random() * (c.max + 1));
                 for(let k=0; k<numToAdd; k++) {
-                    let m = ['b', 'l', 't'][Math.floor(Math.random()*3)];
-                    currentLoadout[i][m]++;
+                    let availableMats = [];
+                    ['brass', 'lead', 'tungsten'].forEach(mat => {
+                        let mCode = matMap[mat];
+                        let eff = getEffectiveStock(g, i, mat);
+                        let currentUsage = eff.isGroup ? getGroupUsage(c.group, mCode, currentLoadout) : currentLoadout[i][mCode];
+                        if (currentUsage < eff.val) availableMats.push(mCode);
+                    });
+
+                    // On n'ajoute que si un matériau est physiquement disponible
+                    if (availableMats.length > 0) {
+                        let m = availableMats[Math.floor(Math.random() * availableMats.length)];
+                        currentLoadout[i][m]++;
+                    }
                 }
             });
         }
@@ -623,11 +762,11 @@ window.autoFillBallast = function() {
 window.exportData = function(type) {
     let exportObj = {}, fileName = "f3f_backup.json";
     if(type === 'all') {
-        exportObj = { type: 'backup_full', version: '6.1', date: new Date().toISOString(), gliders: gliders, logs: flightLogs, coefs: globalCoefs, opts: optParams };
+        exportObj = { type: 'backup_full', version: '6.3', date: new Date().toISOString(), gliders: gliders, logs: flightLogs, coefs: globalCoefs, opts: optParams };
         fileName = `f3f_full_backup_${new Date().toISOString().slice(0,10)}.json`;
     } else if (type === 'model') {
         if(!tempGlider) return;
-        exportObj = { type: 'backup_model', version: '6.1', data: tempGlider };
+        exportObj = { type: 'backup_model', version: '6.3', data: tempGlider };
         fileName = `${tempGlider.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
     }
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: 'application/json'});
@@ -664,7 +803,7 @@ function processImport(data) {
     } else { window.customAlert(t('msg_import_err')); }
 }
 
-/* --- LOGS (AVEC CASES À COCHER, FACTEUR ET CONDITIONS) --- */
+/* --- LOGS --- */
 function updateLogFilters() {
     const mSel = document.getElementById('filter-model'), sSel = document.getElementById('filter-slope');
     const currM = mSel.value; const currS = sSel.value;
@@ -685,7 +824,7 @@ window.renderLogs = function() {
         const d = document.createElement('div'); d.className = 'log-card'; const dt = new Date(l.d);
         d.innerHTML = `
             <button class="log-del" onclick="window.confirmDeleteLog(${l.id})">×</button>
-            <div class="log-header">
+            <div class="log-header" style="padding-right: 35px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" class="log-chk" value="${l.id}" ${isCheckedDefault ? 'checked' : ''} style="width:20px; height:20px; margin:0;">
                     <div class="log-date-slope">${dt.toLocaleDateString()} | ${l.s || 'PENTE'}</div>
@@ -785,7 +924,7 @@ Historique des vols sélectionnés :
 ${recentLogs}`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -817,7 +956,7 @@ ${recentLogs}`;
     }
 };
 
-/* --- CRUD MODEL (V6.0 HYBRIDE) --- */
+/* --- CRUD MODEL --- */
 window.toggleLocalSettings = function() { const isCustom = document.getElementById('edit-use-custom').checked; document.getElementById('local-settings-panel').classList.toggle('hidden', !isCustom); };
 
 window.toggleEditBilinear = function() {
@@ -900,7 +1039,16 @@ function renderEdit() {
     updateUITexts(); 
 }
 
-window.upc = function(i, k, v) { tempGlider.chambers[i][k] = (k==='name'||k==='color') ? v : parseFloat(v); };
+// CORRECTION BUG GESTION STOCK: Si la case est vide (ou non numérique), on stocke 0.
+window.upc = function(i, k, v) { 
+    if (k === 'name' || k === 'color') {
+        tempGlider.chambers[i][k] = v;
+    } else {
+        let parsed = parseFloat(v);
+        tempGlider.chambers[i][k] = isNaN(parsed) ? 0 : parsed; 
+    }
+};
+
 window.rmCh = function(i) { tempGlider.chambers.splice(i,1); renderEdit(); };
 window.resetColor = function(t) { if(t==='nose') { document.getElementById('edit-nose-color').value = '#d63384'; tempGlider.noseColor = '#d63384'; } else { tempGlider.chambers[t].color = '#888888'; renderEdit(); } };
 window.addChamberLine = function() { tempGlider.chambers.push({name:"BALLAST", dist:0, max:5, mass_brass:0, mass_lead:0, mass_tungsten:0, color:"#888888"}); renderEdit(); };
@@ -974,7 +1122,7 @@ window.saveGlider = function() {
 };
 
 window.confirmDeleteGlider = function() { window.showModal(t('msg_del_mod'), false, [{tx:t('cancel'), cl:"btn-outline", val:0}, {tx:t('delete_model'), cl:"btn-danger", val:1}], (r) => { if(r) { gliders = gliders.filter(x=>x.id!==tempGlider.id); save(); window.navigateTo('home'); } }); };
-window.confirmResetLoadout = function() { window.showModal(t('msg_reset'), false, [{tx:t('no'), cl:"btn-outline", val:0}, {tx:t('yes'), cl:"btn-danger", val:1}], (r) => { if(r) { const g = gliders.find(x=>x.id==currentGliderId); g.loadout = g.loadout.map(() => ({b:0, l:0, t:0})); save(); renderCalc(); } }); };
+window.confirmResetLoadout = function() { window.showModal(t('msg_reset'), false, [{tx:t('no'), cl:"btn-outline", val:0}, {tx:t('yes'), cl:"btn-danger", val:1}], (r) => { if(r) { const g = gliders.find(x=>x.id==currentGliderId); g.loadout = g.loadout.map(() => ({b:0, l:0, t:0})); g.noseMass = 0; save(); renderCalc(); } }); };
 
 /* --- SAVE & INIT --- */
 function save() { localStorage.setItem('f3f_gliders', JSON.stringify(gliders)); localStorage.setItem('f3f_logs', JSON.stringify(flightLogs)); localStorage.setItem('f3f_global_coefs', JSON.stringify(globalCoefs)); localStorage.setItem('f3f_opt_params', JSON.stringify(optParams)); }
@@ -1005,6 +1153,37 @@ window.saveOptParams = function() {
 
 function initApp() {
     gliders = JSON.parse(localStorage.getItem('f3f_gliders')) || [];
+    
+    // CHARGEMENT DE LA FLOTTE PAR DÉFAUT SI VIDE
+    if (gliders.length === 0) {
+        gliders = [
+            {
+                id: 1, name: "FREESTYLER (Ancien)", emptyW: 2100, emptyCG: 100, area: 60, target: 100, noseDist: 250, noseMass: 0, noseColor: "#d63384", useCustomSettings: false,
+                chambers: [
+                    { name: "CLÉ", dist: 0, max: 4, mass_brass: 150, mass_lead: 200, mass_tungsten: 300, stock_brass: 0, stock_lead: 0, stock_tungsten: 4, color: "#888888" },
+                    { name: "AILES", dist: 40, max: 6, mass_brass: 100, mass_lead: 150, mass_tungsten: 200, stock_brass: 0, stock_lead: 0, stock_tungsten: 6, color: "#0ea5e9" }
+                ],
+                loadout: [{b:0,l:0,t:0}, {b:0,l:0,t:0}]
+            },
+            {
+                id: 2, name: "JAZZ", emptyW: 2350, emptyCG: 98, area: 58, target: 98, noseDist: 280, noseMass: 0, noseColor: "#d63384", useCustomSettings: false,
+                chambers: [
+                    { name: "MENUISERIE", dist: 10, max: 4, mass_brass: 120, mass_lead: 180, mass_tungsten: 250, stock_brass: 0, stock_lead: 0, stock_tungsten: 4, color: "#888888" },
+                    { name: "SAUMONS", dist: 60, max: 4, mass_brass: 90, mass_lead: 140, mass_tungsten: 190, stock_brass: 0, stock_lead: 0, stock_tungsten: 4, color: "#f59e0b" }
+                ],
+                loadout: [{b:0,l:0,t:0}, {b:0,l:0,t:0}]
+            },
+            {
+                id: 3, name: "PIKE", emptyW: 2280, emptyCG: 99, area: 61, target: 99, noseDist: 260, noseMass: 0, noseColor: "#d63384", useCustomSettings: false,
+                chambers: [
+                    { name: "BALLASTS", dist: 0, max: 8, mass_brass: 140, mass_lead: 210, mass_tungsten: 290, stock_brass: 0, stock_lead: 0, stock_tungsten: 8, color: "#888888" }
+                ],
+                loadout: [{b:0,l:0,t:0}]
+            }
+        ];
+        localStorage.setItem('f3f_gliders', JSON.stringify(gliders));
+    }
+    
     flightLogs = JSON.parse(localStorage.getItem('f3f_logs')) || [];
     
     let savedCoefs = JSON.parse(localStorage.getItem('f3f_global_coefs'));
