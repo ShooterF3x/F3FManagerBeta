@@ -191,16 +191,27 @@
             </div>
         </div>
 
-        <div style="margin-top:10px; margin-bottom:5px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2px;">
-                <label class="dyno-label" style="margin:0; padding:0; line-height:1.2; color:var(--primary);">CG Cible (mm) Ajustable</label>
-                <span id="cg-target-hint" style="font-size:0.75rem; color:var(--text-muted);">Base: ---</span>
+        <div id="ai-suggestion-box" class="ai-suggestion-box hidden" style="margin-top:10px;">
+            <div id="ai-suggestion-text"></div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 15px;">
+           <button class="btn" style="background-color: #0d6efd; color: white; border: none; font-weight: bold;" onclick="window.autoFillBallast()" data-i18n="optimize">🪄 OPTIMISER</button>
+            <button class="btn btn-outline" onclick="window.suggestFromHistory()" style="flex: 1; padding:0; display:flex; align-items:center; justify-content:center; color:var(--primary); border-color:var(--primary);" title="Coach Chrono">💡 </button>
+        </div>
+    </div>
+    
+    <div class="ballast-line collapsed" id="cg-variable-card" onclick="if(event.target.tagName!=='INPUT' && event.target.tagName!=='LABEL' && event.target.tagName!=='BUTTON') this.classList.toggle('collapsed')" style="margin-bottom: 10px;">
+        <div class="ballast-title-row">
+            <div style="display:flex; align-items:center;">
+                <span style="font-weight:bold; font-family:var(--font-head); color:var(--primary);" data-i18n="adj_cg">AJUSTEMENT CG</span>
             </div>
-            <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-                <input type="number" id="inp-cg-target" step="0.1" style="width:80px; font-weight:bold; color:var(--primary);" oninput="syncInputs('cg-target', this.value)">
-                <input type="range" id="rng-cg-target" step="0.1" style="flex:1; margin-top:0;" oninput="syncInputs('cg-target', this.value)">
+            <div style="display:flex; align-items:center;">
+                <span id="card-target-cg-disp" style="font-family:var(--font-num); font-size:0.9rem; margin-right:5px;"></span>
+                <span class="toggle-icon">▶</span>
             </div>
-            
+        </div>
+        <div class="mix-controls" style="flex-direction: column; padding: 10px; gap: 12px; border-top: 1px solid var(--border);">
             <div style="display:flex; background:var(--input); border-radius:var(--radius); padding:4px; border:1px solid var(--border);">
                 <input type="radio" id="cond-lam" name="air-cond" value="LAMINAIRE" style="display:none;" onchange="window.setAerology(this.value)">
                 <label for="cond-lam" class="cond-label" style="flex:1; text-align:center; padding:8px; font-size:0.7rem; font-weight:bold; cursor:pointer; border-radius:calc(var(--radius) - 4px);">LAMINAIRE</label>
@@ -211,15 +222,17 @@
                 <input type="radio" id="cond-turb" name="air-cond" value="TURBULENT" style="display:none;" onchange="window.setAerology(this.value)">
                 <label for="cond-turb" class="cond-label" style="flex:1; text-align:center; padding:8px; font-size:0.7rem; font-weight:bold; cursor:pointer; border-radius:calc(var(--radius) - 4px);">TURBULENT</label>
             </div>
-        </div>
-
-        <div id="ai-suggestion-box" class="ai-suggestion-box hidden" style="margin-top:10px;">
-            <div id="ai-suggestion-text"></div>
-        </div>
-
-        <div style="display: flex; gap: 8px; margin-top: 15px;">
-           <button class="btn" style="background-color: #0d6efd; color: white; border: none; font-weight: bold;" onclick="window.autoFillBallast()" data-i18n="optimize">🪄 OPTIMISER</button>
-            <button class="btn btn-outline" onclick="window.suggestFromHistory()" style="flex: 1; padding:0; display:flex; align-items:center; justify-content:center; color:var(--primary); border-color:var(--primary);" title="Coach Chrono">💡 </button>
+            
+            <div style="width: 100%;">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+                    <span>Manuel (mm)</span>
+                    <span id="cg-target-hint">Base: ---</span>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" id="inp-cg-target" step="0.1" style="width:80px; font-weight:bold; color:var(--primary);" oninput="syncInputs('cg-target', this.value)">
+                    <input type="range" id="rng-cg-target" step="0.1" style="flex:1; margin-top:0;" oninput="syncInputs('cg-target', this.value)">
+                </div>
+            </div>
         </div>
     </div>
     
