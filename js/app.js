@@ -343,7 +343,7 @@ function renderCalc() {
             .vis-slot { flex: 1; max-width: 22px; height: 14px; border-radius: 1px; background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.3); transition:all 0.2s;}
             .vis-slot.b { background: #d97706; border-color: #b45309; } 
             .vis-slot.l { background: #64748b; border-color: #334155; } 
-            .vis-slot.t { background: repeating-linear-gradient(45deg, #1e293b, #1e293b 3px, #475569 3px, #475569 6px); border-color: #0f172a; } 
+            .vis-slot.t { background: repeating-linear-gradient(45deg, #475569, #475569 3px, #94a3b8 3px, #94a3b8 6px); border-color: #334155; }
             .vis-fuse-center { width:14px; height:18px; background: var(--border); border-radius:2px; flex-shrink: 0;}
             .vis-title { text-align:center; font-family:var(--font-head); font-size:0.7rem; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;}
         `;
