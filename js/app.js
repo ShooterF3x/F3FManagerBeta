@@ -287,7 +287,7 @@ window.drawSettingsChart = function() {
     });
 };
 
-/* --- RENDER FUNCTIONS (INCLUANT LE NOUVEAU CROQUIS) --- */
+/* --- RENDER FUNCTIONS --- */
 function renderList() {
     const l = document.getElementById('glider-list'); l.innerHTML = '';
     gliders.forEach(g => {
@@ -330,20 +330,13 @@ function renderCalc() {
     if(!document.getElementById('vis-css')) {
         const style = document.createElement('style');
         style.id = 'vis-css';
-       // --- NOUVEAU MODULE : LE CROQUIS INTERACTIF DE L'AILE ---
-    if(!document.getElementById('vis-css')) {
-        const style = document.createElement('style');
-        style.id = 'vis-css';
         style.innerHTML = `
             /* --- DIAGRAMME COMPACT --- */
             .vis-container { margin: 5px 0 10px 0; padding: 10px 5px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;}
             [data-theme="cyber"] .vis-container { background: rgba(255,255,255,0.02); }
             .vis-fuselage { display:flex; flex-direction:column; align-items:center; position:relative; width: 100%; }
             .vis-nose { width: 24px; height: 24px; background: var(--border); border-radius: 12px 12px 3px 3px; display:flex; align-items:center; justify-content:center; font-size:0.55rem; font-weight:bold; color:var(--bg-body); margin-bottom:5px; transition:all 0.3s;}
-            
-            /* Masquer le nez s'il est vide pour gagner de la place verticale */
             .vis-nose:empty { display: none !important; }
-            
             .vis-chamber-row { display:flex; align-items:center; justify-content:center; gap: 4px; margin-bottom: 4px; width:100%; }
             .vis-wing { display:flex; gap:1px; background: var(--bg-body); padding:2px; border-radius:3px; border: 1px solid var(--border); flex:1; justify-content:flex-end; min-width: 0;}
             .vis-wing.right { justify-content:flex-start; }
@@ -353,17 +346,7 @@ function renderCalc() {
             .vis-slot.t { background: #1e293b; border-color: #0f172a; } 
             .vis-fuse-center { width:14px; height:18px; background: var(--border); border-radius:2px; flex-shrink: 0;}
             .vis-title { text-align:center; font-family:var(--font-head); font-size:0.7rem; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;}
-            
-            /* --- COMPRESSION GLOBALE DE L'ÉCRAN (Spécial Smartphone) --- */
-            #view-calc { padding-top: 5px !important; }
-            #view-calc h2, #calc-title { font-size: 1.1rem; margin-bottom: 5px; margin-top: 0; }
-            #view-calc .control-group, #view-calc .card { margin-bottom: 6px !important; padding: 8px !important; }
-            #view-calc input[type="range"] { height: 1.2rem; margin: 2px 0; }
-            #view-calc .btn { padding: 6px 12px; font-size: 0.9rem; }
-            #view-calc .results-bar, #view-calc .stats-box { margin-bottom: 5px; padding: 6px; }
         `;
-        document.head.appendChild(style);
-    }
         document.head.appendChild(style);
     }
 
@@ -375,6 +358,10 @@ function renderCalc() {
         noseUI.parentNode.insertBefore(visWrapper, noseUI);
     }
 
+    // --- NOUVEAU MODULE : LE CROQUIS INTERACTIF DE L'AILE ---
+    
+    // ... (garde la partie qui génère visHTML et le nez) ...
+
     let visHTML = `<div class="vis-container"><div class="vis-title">🔍 DIAGRAMME DE CHARGEMENT</div><div class="vis-fuselage">`;
     
     // Rendu du Nez
@@ -382,32 +369,52 @@ function renderCalc() {
     let noseText = g.noseMass > 0 ? `${g.noseMass}g` : '';
     visHTML += `<div class="vis-nose" style="background:${noseColor}">${noseText}</div>`;
 
-    // Rendu des Soutes et Slots (remplissage centre vers extérieurs)
+    // Rendu des Soutes et Slots (remplissage symétrique GLOBAL)
+    let isLeftTurn = true; // Tracker global pour équilibrer les charges impaires entre les différentes soutes
+
     g.chambers.forEach((c, i) => {
         const L = g.loadout[i];
         
+        // 1. Récolter les éléments du plus lourd au plus léger (pour les coller au fuselage)
         let items = [];
-        for(let k=0; k<L.b; k++) items.push('b');
-        for(let k=0; k<L.l; k++) items.push('l');
         for(let k=0; k<L.t; k++) items.push('t');
+        for(let k=0; k<L.l; k++) items.push('l');
+        for(let k=0; k<L.b; k++) items.push('b');
         
         let leftSlots = Math.ceil(c.max / 2);
         let rightSlots = Math.floor(c.max / 2);
         
-        let leftItems = [];
-        let rightItems = [];
+        let leftFilled = [];
+        let rightFilled = [];
         
-        items.forEach((item, idx) => {
-            if(idx % 2 === 0 && leftItems.length < leftSlots) leftItems.push(item);
-            else if (rightItems.length < rightSlots) rightItems.push(item);
-            else if (leftItems.length < leftSlots) leftItems.push(item);
+        // 2. Distribution alternée qui se souvient de l'état de la soute précédente
+        items.forEach((item) => {
+            if (isLeftTurn) {
+                if (leftFilled.length < leftSlots) {
+                    leftFilled.push(item);
+                    isLeftTurn = false; // Le prochain ira à droite
+                } else if (rightFilled.length < rightSlots) {
+                    rightFilled.push(item); // Forcé à droite car gauche pleine
+                }
+            } else {
+                if (rightFilled.length < rightSlots) {
+                    rightFilled.push(item);
+                    isLeftTurn = true; // Le prochain ira à gauche
+                } else if (leftFilled.length < leftSlots) {
+                    leftFilled.push(item); // Forcé à gauche car droite pleine
+                }
+            }
         });
 
-        while(leftItems.length < leftSlots) leftItems.push('');
-        while(rightItems.length < rightSlots) rightItems.push('');
+        // 3. Assemblage final pour "tasser" la charge contre le fuselage central
+        let leftItems = [];
+        let emptyLeft = leftSlots - leftFilled.length;
+        for(let k=0; k<emptyLeft; k++) leftItems.push('');
+        leftItems.push(...leftFilled.reverse());
 
-        // On inverse l'aile gauche pour que le ballast s'appuie contre le fuselage au centre
-        leftItems.reverse();
+        let rightItems = [...rightFilled];
+        let emptyRight = rightSlots - rightFilled.length;
+        for(let k=0; k<emptyRight; k++) rightItems.push('');
 
         let lHTML = leftItems.map(item => `<div class="vis-slot ${item}"></div>`).join('');
         let rHTML = rightItems.map(item => `<div class="vis-slot ${item}"></div>`).join('');
@@ -557,11 +564,10 @@ function recalc(g) {
     dEl.style.color = isCgGood ? 'var(--success)' : 'var(--danger)';
     document.getElementById('res-cg').style.color = isCgGood ? 'var(--success)' : 'var(--danger)';
     
-    //document.getElementById('bar-weight').style.width = Math.min((m/5000)*100, 100)+'%';
     const barEl = document.getElementById('bar-weight');
-if (barEl && barEl.parentNode) {
-    barEl.parentNode.style.display = 'none';
-}
+    if (barEl && barEl.parentNode) {
+        barEl.parentNode.style.display = 'none';
+    }
     const loadEl = document.getElementById('res-loading');
     if(g.area > 0) {
         let load = m/g.area;
@@ -570,6 +576,7 @@ if (barEl && barEl.parentNode) {
     }
     
     document.getElementById('res-target-cg-disp').innerText = t('cible_short') + " " + g.sessionTargetCG + "mm";
+    if (document.getElementById('card-target-cg-disp')) document.getElementById('card-target-cg-disp').innerText = g.sessionTargetCG + "mm";
     document.getElementById('res-sim-target').innerText = (target/1000).toFixed(3);
 }
 
@@ -582,6 +589,7 @@ window.syncInputs = function(type, val) {
     if(type==='cg-target') {
         g.sessionTargetCG = parseFloat(val);
         document.getElementById('res-target-cg-disp').innerText = t('cible_short') + " " + g.sessionTargetCG + "mm";
+        if (document.getElementById('card-target-cg-disp')) document.getElementById('card-target-cg-disp').innerText = g.sessionTargetCG + "mm";
         
         if(g.sessionTargetCG < g.target) {
             document.getElementById('cond-turb').checked = true;
@@ -609,6 +617,7 @@ window.setAerology = function(val) {
     document.getElementById('inp-cg-target').value = g.sessionTargetCG.toFixed(1);
     document.getElementById('rng-cg-target').value = g.sessionTargetCG.toFixed(1);
     document.getElementById('res-target-cg-disp').innerText = t('cible_short') + " " + g.sessionTargetCG.toFixed(1) + "mm";
+    if (document.getElementById('card-target-cg-disp')) document.getElementById('card-target-cg-disp').innerText = g.sessionTargetCG.toFixed(1) + "mm";
 
     save(); 
     recalc(g);
